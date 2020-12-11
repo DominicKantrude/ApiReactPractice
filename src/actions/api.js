@@ -1,15 +1,15 @@
 import axios from 'axios';
 
-cnst baseUrl = "https://localhost:5001/api/"
+const baseUrl = "https://localhost:5001/api/"
 
 export default{
-    dCandidate(url = baseUrl = 'dcandidate/'){
+    dCandidate(url = baseUrl + 'dcandidate/'){
         return {
-            fetchAll : () => axious.get(url),
-            fetchById : id =>axious.get(url + id),
-            create : newRecord => axious.post(url, newRecord),
-            update : (id, updateRecord) => axious.put(url + id, updateRecord),
-            delete : id => axious.delete(url + id)
+            fetchAll : () => axios.get(url),
+            fetchById : id =>axios.get(url + id),
+            create : newRecord => axios.post(url, newRecord),
+            update : (id, updateRecord) => axios.put(url + id, updateRecord),
+            delete : id => axios.delete(url + id)
         }
     }
 }

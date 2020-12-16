@@ -1,8 +1,11 @@
 import { FormControl, Button, Grid, TextField, withStyles, InputLabel, Select, MenuItem, FormHelperText} from '@material-ui/core'
 import { ErrorSharp } from '@material-ui/icons'
-import React,{ useState } from 'react'
+import React,{ useState, useEffect } from 'react'
 import { ReactReduxContext } from 'react-redux'
 import useForm from './useForm'
+import * as actions from '../actions/dCandidate'
+import {connect} from 'react-redux'
+import {useToasts} from 'react-toast-notifications'
 
 const styles = theme=>({
     root:{
@@ -31,17 +34,23 @@ const initialFieldValues={
 
 const DCandidateForm= ({classes, ...props}) => {
 
-const validate = ()=>{
-let temp={}
-temp.fullName = values.fullName?"":"This field is required."
-temp.mobile = values.mobile?"":"This field is required."
-temp.bloodGroup = values.bloodGroup?"":"This field is required."
-temp.email=(/^$|.+@.+..+./).test(values.email) ? "" :"Email is not valid."
+ const {addToast} = useToasts()
+
+const validate = (fieldValues = values)=>{
+    let temp={...errors}
+    if('fullName' in fieldValues)
+        temp.fullName = fieldValues.fullName?"":"This field is required."
+    if('mobile' in fieldValues)
+        temp.mobile = fieldValues.mobile?"":"This field is required."
+    if('bloodGroup' in fieldValues)
+        temp.bloodGroup = fieldValues.bloodGroup?"":"This field is required."
+    if('email' in fieldValues)
+        temp.email=(/^$|.+@.+..+./).test(fieldValues.email) ? "" :"Email is not valid."
 setErrors({
     ...temp
 })
-return Object.values(temp).every(x=>x=="")
-
+if(fieldValues == values)
+    return Object.values(temp).every(x=>x=="")
 }
 
     const {
@@ -49,8 +58,9 @@ return Object.values(temp).every(x=>x=="")
         setValues,
         errors, 
         setErrors,
-        handleInputChange
-    } = useForm(initialFieldValues)
+        handleInputChange,
+        resetForm
+    } = useForm(initialFieldValues, validate, props.setCurrentId)
 
     const inputLabel = React.useRef(null);
     const [labelWidth, setLabelWidth] = React.useState(0);
@@ -61,9 +71,25 @@ return Object.values(temp).every(x=>x=="")
 const handleSubmit = e =>{
     e.preventDefault()
     if(validate()){
-         window.alert('validation succeeded')
+        const onSuccess = () =>{ 
+            resetForm()
+            addToast("Submitted successfuly",{appearance:'success'} )
+        }
+        if(props.currentId==0)
+        props.createDCandidate(values, onSuccess)
+        else
+        props.updateDCandidate(props.currentId, values,  onSuccess) 
     }
 }
+
+useEffect(()=>{
+    if(props.currentId!=0){
+        setValues({
+            ...props.dCandidateList.find(x=>x.id == props.currentId)
+        })
+        setErrors({})
+    }
+}, [props.currentId])
 
     return (<form autoComplete="off" noValidate className={classes.root} onSubmit={handleSubmit}>
 <Grid container>
@@ -137,7 +163,8 @@ const handleSubmit = e =>{
             </Button>
             <Button 
             variant="contained"
-            className={classes.smMargin}>
+            className={classes.smMargin}
+            onClick={resetForm}>
                 Reset
             </Button>
         </div>
@@ -146,4 +173,15 @@ const handleSubmit = e =>{
     </form>);
 }
 
-export default withStyles(styles)(DCandidateForm);
+const mapStateToProps = state => {
+    return{
+        dCandidateList:state.dCandidate.list
+    }
+}
+
+const mapActionToProps = {
+createDCandidate: actions.create,
+    updateDCandidate: actions.update
+}
+ 
+export default connect(mapStateToProps, mapActionToProps) (withStyles(styles)(DCandidateForm));
